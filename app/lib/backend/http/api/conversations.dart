@@ -13,7 +13,7 @@ import 'package:path/path.dart';
 
 Future<CreateConversationResponse?> processInProgressConversation() async {
   var response = await makeApiCall(
-    url: '${Env.apiBaseUrl}v2/memories',
+    url: '${Env.apiBaseUrl}v1/conversations',
     headers: {},
     method: 'POST',
     body: jsonEncode({}),
@@ -283,6 +283,23 @@ Future<bool> setConversationActionItemState(
   return response.statusCode == 200;
 }
 
+Future<bool> updateActionItemDescription(
+    String conversationId, String oldDescription, String newDescription, int idx) async {
+  var body = {
+    'old_description': oldDescription,
+    'description': newDescription,
+  };
+  var response = await makeApiCall(
+    url: '${Env.apiBaseUrl}v1/conversations/$conversationId/action-items/$idx',
+    headers: {},
+    method: 'PATCH',
+    body: jsonEncode(body),
+  );
+  if (response == null) return false;
+  debugPrint('updateActionItemDescription: ${response.body}');
+  return response.statusCode == 200;
+}
+
 Future<bool> deleteConversationActionItem(String conversationId, ActionItem item) async {
   var response = await makeApiCall(
     url: '${Env.apiBaseUrl}v1/conversations/$conversationId/action-items',
@@ -379,4 +396,21 @@ Future<(List<ServerConversation>, int, int)> searchConversationsServer(
     return (convos, currentPage, totalPages);
   }
   return (<ServerConversation>[], 0, 0);
+}
+
+Future<String> testConversationPrompt(String prompt, String conversationId) async {
+  var response = await makeApiCall(
+    url: '${Env.apiBaseUrl}v1/conversations/$conversationId/test-prompt',
+    headers: {},
+    method: 'POST',
+    body: jsonEncode({
+      'prompt': prompt,
+    }),
+  );
+  if (response == null) return '';
+  if (response.statusCode == 200) {
+    return jsonDecode(response.body)['summary'];
+  } else {
+    return '';
+  }
 }

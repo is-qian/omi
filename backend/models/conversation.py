@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import List, Optional, Dict
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from models.chat import Message
 from models.transcript_segment import TranscriptSegment
@@ -110,6 +110,16 @@ class Structured(BaseModel):
         description="A list of events extracted from the conversation, that the user must have on his calendar.",
         default=[],
     )
+
+    @field_validator('category', mode='before')
+    @classmethod
+    def set_category_default_on_error(cls, v: any) -> 'CategoryEnum':
+        if isinstance(v, CategoryEnum):
+            return v
+        try:
+            return CategoryEnum(v)
+        except ValueError:
+            return CategoryEnum.other
 
     def __str__(self):
         result = (f"{str(self.title).capitalize()} ({str(self.category.value).capitalize()})\n"
@@ -327,6 +337,11 @@ class DeleteActionItemRequest(BaseModel):
     completed: bool
 
 
+class UpdateActionItemDescriptionRequest(BaseModel):
+    old_description: str
+    description: str
+
+
 class SearchRequest(BaseModel):
     query: str
     page: Optional[int] = 1
@@ -334,3 +349,7 @@ class SearchRequest(BaseModel):
     include_discarded: Optional[bool] = True
     start_date: Optional[str] = None  # ISO format datetime string
     end_date: Optional[str] = None    # ISO format datetime string
+
+
+class TestPromptRequest(BaseModel):
+    prompt: str

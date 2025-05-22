@@ -9,14 +9,14 @@ transcriptions of meetings, chats, and voice memos wherever you are.
 ![CleanShot 2025-02-08 at 18 22 23](https://github.com/user-attachments/assets/7a658366-9e02-4057-bde5-a510e1f0217a)
 
 
-[![Discord Follow](https://dcbadge.vercel.app/api/server/ZutWMTJnwA?style=flat)](https://discord.gg/omi) &ensp;&ensp;&ensp;
+[![Discord Follow](https://dcbadge.vercel.app/api/server/ZutWMTJnwA?style=flat)](https://discord.gg/ACa4FDwJCA) &ensp;&ensp;&ensp;
 [![Twitter Follow](https://img.shields.io/twitter/follow/kodjima33)](https://x.com/kodjima33) &ensp;&ensp;&ensp;
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)&ensp;&ensp;&ensp;
 [![GitHub Repo stars](https://img.shields.io/github/stars/BasedHardware/Omi)](https://github.com/BasedHardware/Omi)
 
 <h3>
 
-[Homepage](https://omi.me/) | [Documentation](https://docs.omi.me/) | [Buy Consumer device](https://www.omi.me/cart/50230946562340:1) | [Buy Developer Kit](https://www.omi.me/products/omi-dev-kit-2)
+[Homepage](https://omi.me/) | [Documentation](https://docs.omi.me/) | [Buy omi Developer Kit](https://www.omi.me/products/omi-dev-kit-2) | [Buy Omi Glass Dev Kit](https://www.omi.me/glass) 
 
 </h3>
 
@@ -85,7 +85,7 @@ Start speaking, you'll see Real-time transcript on [webhook.site ](https://webho
 * Check out our [contributions guide](https://docs.omi.me/docs/developer/Contribution/).
 * Earn from contributing! Check the [paid bounties 🤑](https://omi.me/bounties).
 * Check out the [current issues](https://github.com/BasedHardware/Omi/issues).
-* Join the [Discord](https://discord.gg/omi).
+* Join the [Discord](https://discord.gg/ACa4FDwJCA).
 * Build your own [Plugins/Integrations](https://docs.omi.me/docs/developer/apps/Introduction).
 
 [//]: # (## More links:)

@@ -1,4 +1,4 @@
-<!-- This file is auto-generated from docs/docs/docs/hardware/omiGlass.mdx. Do not edit manually. -->
+<!-- This file is auto-generated from docs/docs/hardware/omiGlass.mdx. Do not edit manually. -->
 # omiGlass - Open Source Meta Raybans with 6x of their battery
 
 <p align="center">
@@ -47,8 +47,6 @@ You'll need the following components to build your own omiGlass:
 - 1x 250mah battery like [this](https://a.co/d/2xheiFC)
 - Wires like [these](https://a.co/d/ah98wY0) and hinges
 - Note: The current design does not include a switch. See contribution section for more details.
-
-[How to assemble guide video](https://youtu.be/Nwb9iOMdTeE)
 
 ### Software Setup
 
