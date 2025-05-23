@@ -6,16 +6,10 @@
 #include <zephyr/audio/dmic.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/logging/log.h>
+#include "mic.h"
 
-#define BITS_PER_BYTE 8
-
-#define SAMPLE_RATE_HZ 16000
-#define SAMPLE_BITS 16
-#define CHANNEL_COUNT 2
- #define TIMEOUT_MS 2000
- #define CAPTURE_MS 1000
- #define BLOCK_SIZE ((SAMPLE_BITS / BITS_PER_BYTE) * (SAMPLE_RATE_HZ * CAPTURE_MS) / 1000) * CHANNEL_COUNT
- #define BLOCK_COUNT 2
+LOG_MODULE_REGISTER(mic, CONFIG_LOG_DEFAULT_LEVEL);
 
 static const struct device *const dmic = DEVICE_DT_GET(DT_ALIAS(dmic0));
 static const struct gpio_dt_spec mic_en = GPIO_DT_SPEC_GET_OR(DT_NODELABEL(pdm_en_pin), gpios, {0});
@@ -47,91 +41,45 @@ static struct dmic_cfg cfg = {
 		},
 };
 
-static bool initialized;
 
-static int cmd_mic_capture(const struct shell *sh, size_t argc, char **argv)
+static volatile bool mic_running = false;
+static volatile mix_handler callback_func = NULL;
+
+static void mic_thread_function(void *p1, void *p2, void *p3)
 {
-	int ret, time = 1;
-	void *buffer = NULL;
-	uint32_t size;
+    ARG_UNUSED(p1);
+    ARG_UNUSED(p2);
+    ARG_UNUSED(p3);
+	int written;
 
-	if (argc > 1)
-	{
-		char *endptr;
-		time = strtol(argv[1], &endptr, 10);
-		if (*endptr != '\0' || time <= 0)
+    while (mic_running) {
+        void *buffer;
+        uint32_t size;
+
+        int ret = dmic_read(dmic, 0, &buffer, &size, TIMEOUT_MS);
+        if (ret < 0) {
+            LOG_ERR("Read failed: %d", ret);
+            continue;
+        }
+
+        LOG_DBG("Got buffer %p of %u bytes", buffer, size);
+		if (callback_func) {
+        	callback_func((int16_t *)buffer, size);
+    	}
+		if (written != size * 2)
 		{
-			shell_error(sh, "Invalid time argument");
-			return -EINVAL;
+			LOG_ERR("Failed to write %d bytes to codec ring buffer", size * 2);
+			return -1;
 		}
-		time *= (1000 / CAPTURE_MS);
-	}
-
-	if (!initialized)
-	{
-		shell_error(sh, "Microphone module not initialized");
-		return -EPERM;
-	}
-
-	// Configure and enable microphone pins
-	mic_power_on();
-	
-	shell_print(sh, "S");
-	ret = dmic_configure(dmic, &cfg);
-	if (ret < 0)
-	{
-		shell_error(sh, "Failed to configure DMIC(%d)", ret);
-		goto cleanup;
-	}
-
-	for (int i = 0; i < time; i++)
-	{
-		ret = dmic_trigger(dmic, DMIC_TRIGGER_START);
-		if (ret < 0)
-		{
-			shell_error(sh, "START trigger failed (%d)", ret);
-			goto cleanup;
-		}
-		
-		ret = dmic_read(dmic, 0, &buffer, &size, TIMEOUT_MS);
-		if (ret < 0)
-		{
-			shell_error(sh, "DMIC read failed (%d)", ret);
-			dmic_trigger(dmic, DMIC_TRIGGER_STOP);
-			goto cleanup;
-		}
-
-		// Process captured data
-		for (int j = 0; j < size / sizeof(int16_t); j++)
-		{
-			shell_print(sh, "%d", ((int16_t *)buffer)[j]);
-		}
-
 		k_mem_slab_free(&mem_slab, buffer);
-		buffer = NULL;
-		ret = dmic_trigger(dmic, DMIC_TRIGGER_STOP);
-		if (ret < 0)
-		{
-			shell_error(sh, "STOP trigger failed (%d)", ret);
-		}
-	}
-
-cleanup:
-	if (buffer)
-	{
-		k_mem_slab_free(&mem_slab, buffer);
-	}
-	shell_print(sh, "E");
-	mic_power_off();
-
-	return ret;
+    }
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_mic_cmds,
-							   SHELL_CMD(capture, NULL, "Capture microphone data", cmd_mic_capture),
-							   SHELL_SUBCMD_SET_END);
+#define MIC_THREAD_STACK_SIZE 2048
+#define MIC_THREAD_PRIORITY 5
+K_THREAD_DEFINE(mic_thread_id, MIC_THREAD_STACK_SIZE, mic_thread_function,
+                NULL, NULL, NULL, MIC_THREAD_PRIORITY, 0, -1);
 
-SHELL_CMD_REGISTER(mic, &sub_mic_cmds, "Microphone", NULL);
 
 int mic_power_off(void)
 {
@@ -153,6 +101,46 @@ int mic_power_on(void)
 	return 0;
 }
 
+static void mic_off(const struct shell *sh, size_t argc, char **argv)
+{
+	mic_power_off();
+    if (mic_running) {
+        mic_running = false;
+        k_thread_abort(mic_thread_id);
+        
+        int ret = dmic_trigger(dmic, DMIC_TRIGGER_STOP);
+        if (ret < 0) {
+            LOG_ERR("STOP trigger failed: %d", ret);
+        }
+        
+        LOG_INF("Microphone stopped");
+    }
+}
+
+static void mic_on(const struct shell *sh, size_t argc, char **argv)
+{
+	mic_power_on();
+    if (!mic_running) {
+        int ret = dmic_trigger(dmic, DMIC_TRIGGER_START);
+        if (ret < 0) {
+            LOG_ERR("START trigger failed: %d", ret);
+            return;
+        }
+        
+        mic_running = true;
+        k_thread_start(mic_thread_id);
+        
+        LOG_INF("Microphone restarted");
+    }
+}
+
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_mic_cmds,
+							   SHELL_CMD(on, NULL, "microphone on", mic_on),
+							   SHELL_CMD(off, NULL, "microphone off", mic_off),
+							   SHELL_SUBCMD_SET_END);
+
+SHELL_CMD_REGISTER(mic, &sub_mic_cmds, "Microphone", NULL);
+
 int mic_init(void)
 {
 	if (!device_is_ready(dmic))
@@ -165,7 +153,10 @@ int mic_init(void)
 	cfg.channel.req_chan_map_lo = dmic_build_channel_map(0, 0, PDM_CHAN_LEFT) | 
 	dmic_build_channel_map(1, 0, PDM_CHAN_RIGHT);
 
-	initialized = true;
-
 	return 0;
+}
+
+void set_mic_callback(mix_handler callback)
+{
+    callback_func = callback;
 }
