@@ -110,6 +110,7 @@
 		nordic,802154-spinel-ipc = &ipc0;
 		zephyr,ieee802154 = &ieee802154;
 		zephyr,wifi = &wlan0;
+		nordic,pm-ext-flash = &spi_flash;
 	};
 	aliases {
 		dmic0 = &pdm0;
@@ -128,6 +129,12 @@
 
 &gpio1 {
 	status = "okay";
+	sdcard_power_default_on: sdcard_power_default_on {
+		gpio-hog;
+		gpios = <10 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "sdcard-power-enable";
+	};
 };
 
 &gpiote {
@@ -198,6 +205,7 @@
 		mmc {
 			compatible = "zephyr,sdmmc-disk";
 			status = "okay";
+			disk-name = "SD";
 		};
 		spi-max-frequency = <24000000>;
 	};
