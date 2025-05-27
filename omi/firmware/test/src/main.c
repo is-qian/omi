@@ -50,7 +50,7 @@ int main(void)
 	bool button_pressed = false;
 	if (init_module() < 0)
 	{
-		shell_execute_cmd(NULL, "sys off");
+		// shell_execute_cmd(NULL, "sys off");
 		return -1;
 	}
 	shell_execute_cmd(NULL, "ble on");
@@ -69,8 +69,8 @@ int main(void)
 
 		ret = k_msgq_get(&input_button, &evt, K_SECONDS(60));
 		if (ret == -EAGAIN) {
-			if (!button_pressed && !is_charging)
-				shell_execute_cmd(NULL, "sys off");
+			// if (!button_pressed && !is_charging)
+			// 	shell_execute_cmd(NULL, "sys off");
             continue;
 		}
 
