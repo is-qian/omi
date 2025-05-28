@@ -4,7 +4,7 @@ app:
   region: flash_primary
   size: 0xf3e00
 external_flash:
-  address: 0x130000
+  address: 0x140000
   end_address: 0x1000000
   region: external_flash
   size: 0xed0000
@@ -54,18 +54,18 @@ mcuboot_primary_app:
 mcuboot_secondary:
   address: 0x0
   device: DT_CHOSEN(nordic_pm_ext_flash)
-  end_address: 0xf0000
+  end_address: 0x100000
   placement:
     align:
       start: 0x4
   region: external_flash
   share_size:
   - mcuboot_primary
-  size: 0xf0000
+  size: 0x100000
 mcuboot_secondary_1:
-  address: 0xf0000
+  address: 0x100000
   device: DT_CHOSEN(nordic_pm_ext_flash)
-  end_address: 0x130000
+  end_address: 0x140000
   region: external_flash
   size: 0x40000
 otp:
